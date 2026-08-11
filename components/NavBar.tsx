@@ -11,7 +11,8 @@ export default function NavBar() {
     { label: 'Mat - Funnel', href: '/mat-funnel' },
     { label: 'Overall + Cat', href: '/overall-cat' },
     { label: 'Mat - Campaign Type', href: '/mat-campaign-type' },
-    { label: 'Campaign Type Google', href: '/campaign-type-google' }
+    { label: 'Campaign Type Google', href: '/campaign-type-google' },
+    { label: 'City - Cat', href: '/city-cat' }
   ];
 
   return (
