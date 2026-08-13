@@ -28,25 +28,26 @@ function parseAnyDate(val: any): Date | null {
   
   const s = val.toString().trim();
   
-  // 1. Try standard JS parse
-  let d = new Date(s);
-  if (!isNaN(d.getTime())) return d;
-  
-  // 2. Try DD/MM/YYYY fallback
+  // 1. Try DD/MM/YYYY fallback explicitly FIRST
+  // If we rely on standard JS Date first, it will mistakenly parse "05/06/2026" as May 6th instead of June 5th.
   const ddMmyyyy = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
   if (ddMmyyyy) {
-    d = new Date(`${ddMmyyyy[3]}-${ddMmyyyy[2]}-${ddMmyyyy[1]}T00:00:00`);
+    const d = new Date(`${ddMmyyyy[3]}-${ddMmyyyy[2].padStart(2,'0')}-${ddMmyyyy[1].padStart(2,'0')}T00:00:00`);
     if (!isNaN(d.getTime())) return d;
   }
   
-  // 3. Try DD-MMM-YYYY
+  // 2. Try DD-MMM-YYYY
   const ddMmmYy = s.match(/^(\d{1,2})[-/ ]([a-zA-Z]{3})[-/ ](\d{2,4})$/);
   if (ddMmmYy) {
     let year = ddMmmYy[3];
     if (year.length === 2) year = '20' + year;
-    d = new Date(`${ddMmmYy[2]} ${ddMmmYy[1]}, ${year}`);
+    const d = new Date(`${ddMmmYy[2]} ${ddMmmYy[1]}, ${year}`);
     if (!isNaN(d.getTime())) return d;
   }
+
+  // 3. Try standard JS parse (handles YYYY-MM-DD, etc)
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
   
   return null;
 }
