@@ -48,7 +48,7 @@ export default function AmazonPage() {
   const processData = (dataArray: any[]) => {
     const parsed: RawRow[] = [];
     const catMap = new Map<string, string>();
-    const parseNum = (val: any) => parseFloat((val || '0').toString().replace(/,/g,'')) || 0;
+    const parseNum = (val: any) => parseFloat((val || '0').toString().replace(/[^0-9.-]+/g, '')) || 0;
 
     dataArray.forEach(r => {
       // Find keys case-insensitively
