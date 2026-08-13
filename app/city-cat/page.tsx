@@ -74,6 +74,7 @@ export default function CityCatPage() {
   const [rawData, setRawData] = useState<RawRow[]>([]);
   const [statusMsg, setStatusMsg] = useState('No CSV loaded');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [appliedCats, setAppliedCats] = useState<string[]>([]);
   const [unmatchedCities, setUnmatchedCities] = useState<string[]>([]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,11 +162,11 @@ export default function CityCatPage() {
 
   // Aggregation Engine
   const { filteredData, monthCols } = useMemo(() => {
-    if (rawData.length === 0 || selectedCats.length === 0) {
+    if (rawData.length === 0 || appliedCats.length === 0) {
       return { filteredData: [], monthCols: [] };
     }
 
-    const validCatValues = new Set(selectedCats.map(c => CAT_MAP[c]));
+    const validCatValues = new Set(appliedCats.map(c => CAT_MAP[c]));
     const monthsSet = new Set<string>();
 
     const fData = rawData.filter(r => {
@@ -176,7 +177,7 @@ export default function CityCatPage() {
 
     const mCols = Array.from(monthsSet).sort();
     return { filteredData: fData, monthCols: mCols };
-  }, [rawData, selectedCats]);
+  }, [rawData, appliedCats]);
 
   const groupedByCity = useMemo(() => {
     const map = new Map<string, Record<string, { cost: number }>>();
@@ -273,7 +274,8 @@ export default function CityCatPage() {
         )}
 
         {/* Export */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', gap: '16px' }}>
+          <button className="btn-primary" onClick={() => setAppliedCats([...selectedCats])}>Generate Output</button>
           {monthCols.length > 0 && <button className="btn-primary" onClick={exportCSV}>Export CSV</button>}
         </div>
 

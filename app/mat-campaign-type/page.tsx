@@ -77,6 +77,8 @@ export default function MatCampaignTypePage() {
   
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [appliedCats, setAppliedCats] = useState<string[]>([]);
+  const [appliedCities, setAppliedCities] = useState<string[]>([]);
   
   const [expandedCities, setExpandedCities] = useState<Record<string, boolean>>({});
 
@@ -161,12 +163,12 @@ export default function MatCampaignTypePage() {
 
   // Aggregation Engine
   const { filteredData, monthCols, isFlat } = useMemo(() => {
-    if (rawData.length === 0 || selectedCats.length === 0 || selectedCities.length === 0) {
+    if (rawData.length === 0 || appliedCats.length === 0 || appliedCities.length === 0) {
       return { filteredData: [], monthCols: [], isFlat: true };
     }
 
-    const validCatValues = new Set(selectedCats.map(c => CAT_MAP[c]));
-    const validCitiesLower = new Set(selectedCities.map(c => c.toLowerCase()));
+    const validCatValues = new Set(appliedCats.map(c => CAT_MAP[c]));
+    const validCitiesLower = new Set(appliedCities.map(c => c.toLowerCase()));
     
     // Determine unique months from filtered data
     const monthsSet = new Set<string>();
@@ -183,9 +185,9 @@ export default function MatCampaignTypePage() {
     return { 
       filteredData: fData, 
       monthCols: mCols,
-      isFlat: selectedCities.length === 1
+      isFlat: appliedCities.length === 1
     };
-  }, [rawData, selectedCats, selectedCities]);
+  }, [rawData, appliedCats, appliedCities]);
 
   const { cityGrouped, flatGrouped } = useMemo(() => {
     if (isFlat) {
@@ -419,7 +421,8 @@ export default function MatCampaignTypePage() {
         </div>
 
         {/* Export */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', gap: '16px' }}>
+          <button className="btn-primary" onClick={() => { setAppliedCats([...selectedCats]); setAppliedCities([...selectedCities]); }}>Generate Output</button>
           {monthCols.length > 0 && <button className="btn-primary" onClick={exportCSV}>Export CSV</button>}
         </div>
 

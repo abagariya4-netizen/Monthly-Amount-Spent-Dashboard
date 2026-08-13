@@ -74,6 +74,7 @@ export default function AmazonPage() {
   const [rawData, setRawData] = useState<RawRow[]>([]);
   const [statusMsg, setStatusMsg] = useState('No file loaded');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [appliedCats, setAppliedCats] = useState<string[]>([]);
   const [asinCategoryMap, setAsinCategoryMap] = useState<Map<string, string>>(new Map());
 
   const processData = (dataArray: any[]) => {
@@ -172,7 +173,7 @@ export default function AmazonPage() {
   };
 
   const { filteredAsins, buckets, aggregatedData } = useMemo(() => {
-    if (rawData.length === 0) {
+    if (rawData.length === 0 || appliedCats.length === 0) {
       return { filteredAsins: [], buckets: [], aggregatedData: new Map() };
     }
 
@@ -241,7 +242,7 @@ export default function AmazonPage() {
     const allBuckets = [...sortedHist, ...bcks.sort((a,b) => a.order - b.order)];
 
     // 3. Filter Asins
-    const validCats = new Set(selectedCats);
+    const validCats = new Set(appliedCats);
     const validAsins = new Set<string>();
     
     // Group By ASIN -> BucketKey -> Spend
@@ -249,7 +250,7 @@ export default function AmazonPage() {
 
     rawData.forEach(r => {
       const cat = asinCategoryMap.get(r.asin) || 'Uncategorized';
-      if (selectedCats.length > 0 && !validCats.has(cat)) return;
+      if (appliedCats.length > 0 && !validCats.has(cat)) return;
       
       validAsins.add(r.asin);
 
@@ -281,7 +282,7 @@ export default function AmazonPage() {
     });
 
     return { filteredAsins: sortedAsins, buckets: allBuckets, aggregatedData: agg };
-  }, [rawData, selectedCats, asinCategoryMap]);
+  }, [rawData, appliedCats, asinCategoryMap]);
 
   const formatNum = (num: number) => {
     if (!num || isNaN(num) || num === 0) return '';
@@ -342,7 +343,8 @@ export default function AmazonPage() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', gap: '16px' }}>
+          <button className="btn-primary" onClick={() => setAppliedCats([...selectedCats])}>Generate Output</button>
           {filteredAsins.length > 0 && <button className="btn-primary" onClick={exportCSV}>Export CSV</button>}
         </div>
 
