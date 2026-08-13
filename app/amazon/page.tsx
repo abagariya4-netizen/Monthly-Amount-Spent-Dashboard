@@ -21,6 +21,36 @@ type Bucket = {
   order: number;
 };
 
+function parseAnyDate(val: any): Date | null {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
+  
+  const s = val.toString().trim();
+  
+  // 1. Try standard JS parse
+  let d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
+  
+  // 2. Try DD/MM/YYYY fallback
+  const ddMmyyyy = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (ddMmyyyy) {
+    d = new Date(`${ddMmyyyy[3]}-${ddMmyyyy[2]}-${ddMmyyyy[1]}T00:00:00`);
+    if (!isNaN(d.getTime())) return d;
+  }
+  
+  // 3. Try DD-MMM-YYYY
+  const ddMmmYy = s.match(/^(\d{1,2})[-/ ]([a-zA-Z]{3})[-/ ](\d{2,4})$/);
+  if (ddMmmYy) {
+    let year = ddMmmYy[3];
+    if (year.length === 2) year = '20' + year;
+    d = new Date(`${ddMmmYy[2]} ${ddMmmYy[1]}, ${year}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+  
+  return null;
+}
+
 function deriveCategory(campaignName: string) {
   const segments = campaignName.split('/');
   for (const seg of segments) {
@@ -61,14 +91,7 @@ export default function AmazonPage() {
       if (!keyDate || !keyCampaign || !keyAsin || !keySpend) return;
 
       const rawDate = r[keyDate];
-      let dateObj: Date | null = null;
-      if (typeof rawDate === 'number') {
-        dateObj = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
-      } else {
-        const d = new Date(rawDate);
-        if (!isNaN(d.getTime())) dateObj = d;
-      }
-
+      const dateObj = parseAnyDate(rawDate);
       if (!dateObj) return;
 
       const asin = (r[keyAsin] || '').toString().trim();
@@ -124,7 +147,7 @@ export default function AmazonPage() {
           const workbook = XLSX.read(data, { type: 'array', cellDates: true });
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
-          const json = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' });
+          const json = XLSX.utils.sheet_to_json(worksheet, { raw: true });
           processData(json);
         } catch (err: any) {
           setStatusMsg(`Error parsing XLSX: ${err.message}`);
