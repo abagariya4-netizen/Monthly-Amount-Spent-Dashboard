@@ -2,11 +2,26 @@
 import React, { useState, useMemo } from 'react';
 import Papa from 'papaparse';
 
-const CATEGORIES = ['Mat', 'Chair', 'Desk', 'Sofa', 'Foot Massager', 'Elite', 'Accessories', 'Growth', 'RnF', 'Group', 'Boost'];
+import { getMappedCity } from '@/lib/googleCityMapping';
+
+const CATEGORIES = ['Mattress', 'Chair', 'Desk', 'Elite', 'Sofa', 'Foot Massager', 'Accessories', 'Bed'];
 const CAT_MAP: Record<string, string> = {
-  'Mat': 'Mat', 'Chair': 'Chair', 'Desk': 'Desk', 'Sofa': 'Sofa', 'Foot Massager': 'FM', 
-  'Elite': 'Elite', 'Accessories': 'Acce', 'Growth': 'Growth', 'RnF': 'Rnf', 'Group': 'Group', 'Boost': 'Boost'
+  'Mattress': 'Mattress', 'Chair': 'Chair', 'Desk': 'Desk', 'Sofa': 'Sofa', 'Foot Massager': 'Foot Massager', 
+  'Elite': 'Elite', 'Accessories': 'Accessories', 'Bed': 'Bed'
 };
+
+function getCategoryFromCampaign(campaignName: string): string {
+  const lower = (campaignName || '').toLowerCase();
+  if (lower.includes('mat') || lower.includes('mattress')) return 'Mattress';
+  if (lower.includes('chair')) return 'Chair';
+  if (lower.includes('desk')) return 'Desk';
+  if (lower.includes('elite')) return 'Elite';
+  if (lower.includes('sofa')) return 'Sofa';
+  if (lower.includes('foot') || lower.includes('massager')) return 'Foot Massager';
+  if (lower.includes('accessories') || lower.includes('pillow') || lower.includes('cushion') || lower.includes('protector') || lower.includes('bedsheet') || lower.includes('comforter')) return 'Accessories';
+  if (lower.includes('bed')) return 'Bed';
+  return 'Mattress';
+}
 
 const CITY_ORDER = [
   'Bengaluru', 'Rest', 'Hyderabad', 'Mumbai', 'Chennai', 'Pune', 'Delhi', 'Gurgaon', 
@@ -114,18 +129,21 @@ export default function CityCatPage() {
             monthKey = parseMonthStr(rawMonth);
           }
 
-          let rawCity = (cleanRow['Mapped'] || '').trim();
-          let lowerCity = rawCity.toLowerCase();
+          let rawCity = (cleanRow['City (Matched)'] || '').trim();
+          let rawMappedCity = getMappedCity(rawCity);
+          let lowerCity = rawMappedCity.toLowerCase();
           
           let canonicalCity = 'Rest';
           if (staticCityMap.has(lowerCity)) {
             canonicalCity = staticCityMap.get(lowerCity)!;
           } else if (lowerCity && lowerCity !== 'rest') {
-            unmatched.add(rawCity);
+            unmatched.add(rawMappedCity);
           }
 
+          const rawCampaign = cleanRow['Campaign'] || '';
+          
           parsed.push({
-            cat: cleanRow['Cat'] || '',
+            cat: getCategoryFromCampaign(rawCampaign),
             mappedCity: canonicalCity,
             month: monthKey,
             cost: parseNum(cleanRow['Cost'])
