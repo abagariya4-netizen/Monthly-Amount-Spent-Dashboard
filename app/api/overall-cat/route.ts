@@ -19,12 +19,13 @@ const REGIONS = [
 
 import { fmtDate, Month, getDefaultMonthsBeforeCurrent, getSelectedMonths } from '@/lib/dateUtils';
 
-function classifyFunnel(campaignName: string): 'Top' | 'Mid' | 'Bot' | 'Growth' | null {
-  const n = (campaignName || '').toLowerCase();
-  if (n.includes('growth')) return 'Growth';
-  if (n.includes('bot')) return 'Bot';
-  if (n.includes('mid')) return 'Mid';
-  if (n.includes('top')) return 'Top';
+function classifyFunnel(campaignName: string, adsetName: string): 'Top' | 'Mid' | 'Bot' | 'Growth' | null {
+  const cn = (campaignName || '').toLowerCase();
+  const an = (adsetName || '').toLowerCase();
+  if (cn.includes('growth') || an.includes('growth')) return 'Growth';
+  if (cn.includes('bot')) return 'Bot';
+  if (cn.includes('mid')) return 'Mid';
+  if (cn.includes('top')) return 'Top';
   return null;
 }
 
@@ -37,7 +38,7 @@ function getCategories(campaignName: string, adsetName: string): Set<string> {
   if (cn.includes('boost') || an.includes('boost')) matched.add('Boost');
   
   let productCategory = null;
-  const isGrowth = classifyFunnel(campaignName) === 'Growth';
+  const isGrowth = classifyFunnel(campaignName, adsetName) === 'Growth';
 
   if (cn.includes('dhoni')) {
     if (an.includes('chair')) productCategory = 'Chair';
@@ -45,6 +46,8 @@ function getCategories(campaignName: string, adsetName: string): Set<string> {
     else if (an.includes('sofa')) productCategory = 'Sofa';
     else if (an.includes('elite')) productCategory = 'Elite';
     else if (an.includes('foot')) productCategory = 'Foot Massager';
+    else if (an.includes('bed')) productCategory = 'Bed';
+    else if (an.includes('acce')) productCategory = 'Accessories';
     else if (an.includes('mat') || an.includes('mattress')) productCategory = 'Mat';
   } else if (isGrowth) {
     const str = cn;
@@ -53,6 +56,8 @@ function getCategories(campaignName: string, adsetName: string): Set<string> {
     else if (str.includes('sofa')) productCategory = 'Sofa';
     else if (str.includes('elite')) productCategory = 'Elite';
     else if (str.includes('foot')) productCategory = 'Foot Massager';
+    else if (str.includes('bed')) productCategory = 'Bed';
+    else if (str.includes('acce')) productCategory = 'Accessories';
     else productCategory = 'Mat';
   } else {
     const str = cn + " " + an;
@@ -156,7 +161,7 @@ export async function GET(req: NextRequest) {
         if (!catIncluded) continue;
 
         // Funnel Check
-        const funnelRow = classifyFunnel(cName);
+        const funnelRow = classifyFunnel(cName, aName);
         if (!funnelRow) continue; 
 
         if (!isAllFunnels && !selectedFunnels.includes(funnelRow)) {
