@@ -108,6 +108,10 @@ export default function CityCatPage() {
         const fields = results.meta.fields || [];
         const cleanFields = fields.map(f => f.replace(/^\uFEFF/, '').trim());
         
+        const hasCatColumn = cleanFields.includes('Cat');
+        const hasMappedColumn = cleanFields.includes('Mapped');
+        const hasCityColumn = cleanFields.includes('City (Matched)');
+        
         const parseNum = (val: any) => parseFloat((val || '0').toString().replace(/,/g,'')) || 0;
         
         const unmatched = new Set<string>();
@@ -129,21 +133,33 @@ export default function CityCatPage() {
             monthKey = parseMonthStr(rawMonth);
           }
 
-          let rawCity = (cleanRow['City (Matched)'] || '').trim();
-          let rawMappedCity = getMappedCity(rawCity);
-          let lowerCity = rawMappedCity.toLowerCase();
+          let rawCity = '';
+          if (hasMappedColumn) {
+             rawCity = (cleanRow['Mapped'] || '').trim();
+          } else if (hasCityColumn) {
+             rawCity = getMappedCity((cleanRow['City (Matched)'] || '').trim());
+          } else {
+             rawCity = 'Rest';
+          }
+          let lowerCity = rawCity.toLowerCase();
           
           let canonicalCity = 'Rest';
           if (staticCityMap.has(lowerCity)) {
             canonicalCity = staticCityMap.get(lowerCity)!;
           } else if (lowerCity && lowerCity !== 'rest') {
-            unmatched.add(rawMappedCity);
+            unmatched.add(rawCity);
           }
 
           const rawCampaign = cleanRow['Campaign'] || '';
+          let cat = '';
+          if (hasCatColumn) {
+             cat = cleanRow['Cat'] || '';
+          } else {
+             cat = getCategoryFromCampaign(rawCampaign);
+          }
           
           parsed.push({
-            cat: getCategoryFromCampaign(rawCampaign),
+            cat,
             mappedCity: canonicalCity,
             month: monthKey,
             cost: parseNum(cleanRow['Cost'])

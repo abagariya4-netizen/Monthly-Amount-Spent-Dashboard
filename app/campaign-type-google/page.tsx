@@ -2,7 +2,34 @@
 import React, { useState, useMemo } from 'react';
 import Papa from 'papaparse';
 
-const CATEGORIES = ['Acce', 'Chair', 'Desk', 'Elite', 'Foot', 'Mat', 'Sofa'];
+const CATEGORIES = ['Mattress', 'Chair', 'Desk', 'Elite', 'Sofa', 'Foot Massager', 'Accessories', 'Bed'];
+
+function getCategoryFromCampaign(campaignName: string): string {
+  const lower = (campaignName || '').toLowerCase();
+  if (lower.includes('mat') || lower.includes('mattress')) return 'Mattress';
+  if (lower.includes('chair')) return 'Chair';
+  if (lower.includes('desk')) return 'Desk';
+  if (lower.includes('elite')) return 'Elite';
+  if (lower.includes('sofa')) return 'Sofa';
+  if (lower.includes('foot') || lower.includes('massager')) return 'Foot Massager';
+  if (lower.includes('accessories') || lower.includes('pillow') || lower.includes('cushion') || lower.includes('protector') || lower.includes('bedsheet') || lower.includes('comforter')) return 'Accessories';
+  if (lower.includes('bed')) return 'Bed';
+  return 'Mattress';
+}
+
+function classifyCampaignType(rawType: string, campaignName: string): string {
+  const name = (campaignName || '').toLowerCase();
+  if (rawType === 'Performance Max') return 'Performance Max';
+  if (rawType === 'Shopping') return 'Shopping';
+  if (rawType === 'Display') return 'Display';
+  if (rawType === 'Demand Gen') {
+    return name.includes('click') ? 'Demand Gen Click' : 'Demand Gen Video';
+  }
+  if (rawType === 'Search') {
+    return name.includes('brand') ? 'Brand Search' : 'Search';
+  }
+  return rawType;
+}
 
 type RawRow = {
   campaign: string;
@@ -35,6 +62,8 @@ export default function CampaignTypeGooglePage() {
         const fields = results.meta.fields || [];
         const cleanFields = fields.map(f => f.replace(/^\uFEFF/, '').trim());
         
+        const hasCatColumn = cleanFields.includes('Cat');
+        
         const parseNum = (val: any) => parseFloat((val || '0').toString().replace(/,/g,'')) || 0;
         
         results.data.forEach((r: any) => {
@@ -43,11 +72,23 @@ export default function CampaignTypeGooglePage() {
             const cleanKey = k.replace(/^\uFEFF/, '').trim();
             cleanRow[cleanKey] = r[k];
           });
+          
+          const rawCampaign = cleanRow['Campaign'] || '';
+          
+          let cat = '';
+          if (hasCatColumn) {
+             cat = cleanRow['Cat'] || '';
+          } else {
+             cat = getCategoryFromCampaign(rawCampaign);
+          }
+          
+          const rawType = cleanRow['Campaign type'] || '';
+          const finalType = classifyCampaignType(rawType, rawCampaign);
 
           parsed.push({
-            campaign: cleanRow['Campaign'] || '',
-            cat: cleanRow['Cat'] || '',
-            campaignType: cleanRow['Campaign type'] || '',
+            campaign: rawCampaign,
+            cat,
+            campaignType: finalType,
             month: (cleanRow['Month'] || '').trim(),
             cost: parseNum(cleanRow['Cost']),
             convValue: parseNum(cleanRow['Conv. value'])
@@ -106,16 +147,17 @@ export default function CampaignTypeGooglePage() {
   }, [rawData, appliedCats]);
 
   const flatGrouped = useMemo(() => {
-    const map = new Map<string, Record<string, { cost: number }>>();
+    const map = new Map<string, Record<string, { cost: number, conv: number }>>();
     filteredData.forEach(r => {
       let node = map.get(r.campaignType);
       if (!node) {
         node = {};
-        monthCols.forEach(m => node![m] = { cost: 0 });
+        monthCols.forEach(m => node![m] = { cost: 0, conv: 0 });
         map.set(r.campaignType, node);
       }
       if (node[r.month]) {
         node[r.month].cost += r.cost;
+        node[r.month].conv += r.convValue;
       }
     });
     return map;
@@ -133,6 +175,7 @@ export default function CampaignTypeGooglePage() {
     
     let rows: string[] = [];
     
+    rows.push('--- AMOUNT SPENT ---');
     rows.push(['Campaign Type', ...monthCols].join(','));
     let grandTotalCost = Object.fromEntries(monthCols.map(m => [m, 0]));
     
@@ -149,6 +192,29 @@ export default function CampaignTypeGooglePage() {
     const gtRow = ['Grand Total'];
     monthCols.forEach(m => gtRow.push(grandTotalCost[m].toString()));
     rows.push(gtRow.join(','));
+
+    rows.push('');
+    rows.push('--- ROAS ---');
+    rows.push(['Campaign Type', ...monthCols].join(','));
+    let grandTotalConv = Object.fromEntries(monthCols.map(m => [m, 0]));
+    
+    Array.from(flatGrouped.keys()).sort().forEach(type => {
+      const node = flatGrouped.get(type)!;
+      const row = [type];
+      monthCols.forEach(m => {
+        const roas = node[m].cost > 0 ? (node[m].conv / node[m].cost).toFixed(2) : '0';
+        row.push(roas);
+        grandTotalConv[m] += node[m].conv;
+      });
+      rows.push(row.join(','));
+    });
+    
+    const gtRoasRow = ['Grand Total'];
+    monthCols.forEach(m => {
+      const roas = grandTotalCost[m] > 0 ? (grandTotalConv[m] / grandTotalCost[m]).toFixed(2) : '0';
+      gtRoasRow.push(roas);
+    });
+    rows.push(gtRoasRow.join(','));
     
     const csvStr = rows.join('\n');
     const blob = new Blob([csvStr], { type: 'text/csv' });
@@ -229,6 +295,50 @@ export default function CampaignTypeGooglePage() {
                     {monthCols.map(m => {
                       const total = Array.from(flatGrouped.values()).reduce((sum, n) => sum + n[m].cost, 0);
                       return <td key={m} style={{ textAlign: 'right', fontWeight: 'bold', padding: '12px 16px' }}>{formatNum(total)}</td>;
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          {/* ROAS TABLE */}
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-primary)' }}>ROAS</h2>
+            <div className="table-wrapper">
+              <table className="modern-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '12px 16px' }}>Campaign Type</th>
+                    {monthCols.map(m => <th key={m} style={{ textAlign: 'right', padding: '12px 16px' }}>{m}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from(flatGrouped.keys()).sort().map(type => (
+                    <tr key={type} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ textAlign: 'left', padding: '12px 16px' }}>{type}</td>
+                      {monthCols.map(m => {
+                        const node = flatGrouped.get(type)![m];
+                        const roas = node.cost > 0 ? (node.conv / node.cost) : 0;
+                        return (
+                          <td key={m} style={{ textAlign: 'right', padding: '12px 16px' }}>
+                            {roas > 0 ? roas.toFixed(2) : '—'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  <tr className="total-row" style={{ backgroundColor: '#111', borderTop: '2px solid var(--border-color)' }}>
+                    <td style={{ fontWeight: 'bold', textAlign: 'left', padding: '12px 16px' }}>Grand Total</td>
+                    {monthCols.map(m => {
+                      const totalCost = Array.from(flatGrouped.values()).reduce((sum, n) => sum + n[m].cost, 0);
+                      const totalConv = Array.from(flatGrouped.values()).reduce((sum, n) => sum + n[m].conv, 0);
+                      const roas = totalCost > 0 ? (totalConv / totalCost) : 0;
+                      return (
+                        <td key={m} style={{ textAlign: 'right', fontWeight: 'bold', padding: '12px 16px' }}>
+                          {roas > 0 ? roas.toFixed(2) : '—'}
+                        </td>
+                      );
                     })}
                   </tr>
                 </tbody>

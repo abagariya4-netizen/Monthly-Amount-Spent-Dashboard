@@ -2,11 +2,40 @@
 import React, { useState, useMemo } from 'react';
 import Papa from 'papaparse';
 
-const CATEGORIES = ['Mat', 'Chair', 'Desk', 'Sofa', 'Foot Massager', 'Elite', 'Accessories', 'Growth', 'RnF', 'Group', 'Boost'];
+import { getMappedCity } from '@/lib/googleCityMapping';
+
+const CATEGORIES = ['Mattress', 'Chair', 'Desk', 'Elite', 'Sofa', 'Foot Massager', 'Accessories', 'Bed'];
 const CAT_MAP: Record<string, string> = {
-  'Mat': 'Mat', 'Chair': 'Chair', 'Desk': 'Desk', 'Sofa': 'Sofa', 'Foot Massager': 'FM', 
-  'Elite': 'Elite', 'Accessories': 'Acce', 'Growth': 'Growth', 'RnF': 'Rnf', 'Group': 'Group', 'Boost': 'Boost'
+  'Mattress': 'Mattress', 'Chair': 'Chair', 'Desk': 'Desk', 'Sofa': 'Sofa', 'Foot Massager': 'Foot Massager', 
+  'Elite': 'Elite', 'Accessories': 'Accessories', 'Bed': 'Bed'
 };
+
+function getCategoryFromCampaign(campaignName: string): string {
+  const lower = (campaignName || '').toLowerCase();
+  if (lower.includes('mat') || lower.includes('mattress')) return 'Mattress';
+  if (lower.includes('chair')) return 'Chair';
+  if (lower.includes('desk')) return 'Desk';
+  if (lower.includes('elite')) return 'Elite';
+  if (lower.includes('sofa')) return 'Sofa';
+  if (lower.includes('foot') || lower.includes('massager')) return 'Foot Massager';
+  if (lower.includes('accessories') || lower.includes('pillow') || lower.includes('cushion') || lower.includes('protector') || lower.includes('bedsheet') || lower.includes('comforter')) return 'Accessories';
+  if (lower.includes('bed')) return 'Bed';
+  return 'Mattress';
+}
+
+function classifyCampaignType(rawType: string, campaignName: string): string {
+  const name = (campaignName || '').toLowerCase();
+  if (rawType === 'Performance Max') return 'Performance Max';
+  if (rawType === 'Shopping') return 'Shopping';
+  if (rawType === 'Display') return 'Display';
+  if (rawType === 'Demand Gen') {
+    return name.includes('click') ? 'Demand Gen Click' : 'Demand Gen';
+  }
+  if (rawType === 'Search') {
+    return name.includes('brand') ? 'Brand Search' : 'Search';
+  }
+  return rawType;
+}
 
 const CITIES = ['Ahmedabad', 'Ballari', 'Belgaum', 'Bengaluru', 'Bhopal', 'Bhubaneswar', 
    'Chandigarh', 'Chennai', 'Coimbatore', 'Dehradun', 'Delhi', 'Faridabad', 
@@ -98,6 +127,10 @@ export default function MatCampaignTypePage() {
         const fields = results.meta.fields || [];
         const cleanFields = fields.map(f => f.replace(/^\uFEFF/, '').trim());
         
+        const hasCatColumn = cleanFields.includes('Cat');
+        const hasMappedColumn = cleanFields.includes('Mapped');
+        const hasCityColumn = cleanFields.includes('City (Matched)');
+        
         const parseNum = (val: any) => parseFloat((val || '0').toString().replace(/,/g,'')) || 0;
         
         results.data.forEach((r: any) => {
@@ -114,11 +147,32 @@ export default function MatCampaignTypePage() {
             monthKey = parseMonthStr(rawMonth);
           }
 
+          const rawCampaign = cleanRow['Campaign'] || '';
+          
+          let cat = '';
+          if (hasCatColumn) {
+             cat = cleanRow['Cat'] || '';
+          } else {
+             cat = getCategoryFromCampaign(rawCampaign);
+          }
+          
+          let rawCity = '';
+          if (hasMappedColumn) {
+             rawCity = (cleanRow['Mapped'] || '').trim();
+          } else if (hasCityColumn) {
+             rawCity = getMappedCity((cleanRow['City (Matched)'] || '').trim());
+          } else {
+             rawCity = 'Rest';
+          }
+          
+          const rawType = cleanRow['Campaign type'] || '';
+          const finalType = classifyCampaignType(rawType, rawCampaign);
+
           parsed.push({
-            campaign: cleanRow['Campaign'] || '',
-            cat: cleanRow['Cat'] || '',
-            campaignType: cleanRow['Campaign type'] || '',
-            mappedCity: (cleanRow['Mapped'] || '').toLowerCase().trim(),
+            campaign: rawCampaign,
+            cat,
+            campaignType: finalType,
+            mappedCity: rawCity.toLowerCase(),
             month: monthKey,
             cost: parseNum(cleanRow['Cost']),
             convValue: parseNum(cleanRow['Conv. value'])
