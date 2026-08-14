@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DateRangePicker from '@/components/DateRangePicker';
 
-const CATEGORIES = ['Mat', 'Chair', 'Desk', 'Sofa', 'Foot Massager', 'Elite', 'Group', 'Boost', 'RnF'];
+const CATEGORIES = ['Mat', 'Chair', 'Desk', 'Sofa', 'Foot Massager', 'Elite', 'Group', 'Boost'];
 
 export default function MatFunnelPage() {
   const [selectedCats, setSelectedCats] = useState<string[]>([]);

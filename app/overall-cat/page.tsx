@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DateRangePicker from '@/components/DateRangePicker';
 
-const CATEGORIES = ['Mat', 'Chair', 'Desk', 'Sofa', 'Foot Massager', 'Elite', 'Group', 'Boost', 'RnF'];
-const FUNNELS = ['Top', 'Mid', 'Bot', 'Growth'];
+const CATEGORIES = ['Mat', 'Chair', 'Desk', 'Sofa', 'Foot Massager', 'Elite', 'Group', 'Boost'];
+const FUNNELS = ['Top', 'Mid', 'Bot', 'Growth', 'RnF'];
 
 export default function OverallCatPage() {
   const [selectedCats, setSelectedCats] = useState<string[]>([]);

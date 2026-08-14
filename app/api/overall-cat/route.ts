@@ -19,9 +19,10 @@ const REGIONS = [
 
 import { fmtDate, Month, getDefaultMonthsBeforeCurrent, getSelectedMonths } from '@/lib/dateUtils';
 
-function classifyFunnel(campaignName: string, adsetName: string): 'Top' | 'Mid' | 'Bot' | 'Growth' | null {
+function classifyFunnel(campaignName: string, adsetName: string): 'Top' | 'Mid' | 'Bot' | 'Growth' | 'RnF' | null {
   const cn = (campaignName || '').toLowerCase();
   const an = (adsetName || '').toLowerCase();
+  if (cn.includes('rnf') || an.includes('rnf') || cn.includes('r&f') || an.includes('r&f')) return 'RnF';
   if (cn.includes('growth') || an.includes('growth')) return 'Growth';
   if (cn.includes('bot')) return 'Bot';
   if (cn.includes('mid')) return 'Mid';
@@ -36,7 +37,6 @@ function getCategories(campaignName: string, adsetName: string): Set<string> {
   
   if (cn.includes('group') || an.includes('group')) matched.add('Group');
   if (cn.includes('boost') || an.includes('boost')) matched.add('Boost');
-  if (cn.includes('rnf') || an.includes('rnf') || cn.includes('r&f') || an.includes('r&f')) matched.add('RnF');
   
   let productCategory = null;
   const isGrowth = classifyFunnel(campaignName, adsetName) === 'Growth';
@@ -60,7 +60,7 @@ function getCategories(campaignName: string, adsetName: string): Set<string> {
     else if (str.includes('bed')) productCategory = 'Bed';
     else if (str.includes('acce')) productCategory = 'Accessories';
     else {
-      if (!matched.has('Group') && !matched.has('Boost') && !matched.has('RnF')) {
+      if (!matched.has('Group') && !matched.has('Boost')) {
         productCategory = 'Mat';
       }
     }
@@ -78,7 +78,7 @@ function getCategories(campaignName: string, adsetName: string): Set<string> {
       else if (str.includes('foot')) productCategory = 'Foot Massager';
       else if (str.includes('all_products') || isMat) productCategory = 'Mat';
       else {
-        if (!matched.has('Group') && !matched.has('Boost') && !matched.has('RnF')) {
+        if (!matched.has('Group') && !matched.has('Boost')) {
           productCategory = 'Mat';
         }
       }
