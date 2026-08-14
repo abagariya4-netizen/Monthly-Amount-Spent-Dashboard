@@ -162,7 +162,7 @@ export async function GET(req: NextRequest) {
     }
 
     const finalCampaigns = [];
-    for (const name of ['Top', 'Mid', 'Bot', 'Growth']) {
+    for (const name of ['Top', 'Mid', 'Bot', 'Growth', 'RnF']) {
       finalCampaigns.push(campaignsMap.get(name));
     }
 

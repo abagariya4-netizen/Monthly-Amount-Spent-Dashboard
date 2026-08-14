@@ -108,13 +108,13 @@ export default function MatFunnelPage() {
       // Total row for region
       const regionTotalRow = [r.region, 'Total'];
       data.monthLabels.forEach((m) => {
-        const val = ['Top', 'Mid', 'Bot', 'Growth'].reduce((sum, f) => sum + (r.funnels[f][m]?.spend || 0), 0);
+        const val = ['Top', 'Mid', 'Bot', 'Growth', 'RnF'].reduce((sum, f) => sum + (r.funnels[f][m]?.spend || 0), 0);
         regionTotalRow.push(val.toString());
       });
       rows.push(regionTotalRow.join(','));
 
       // Sub-rows
-      ['Top', 'Mid', 'Bot', 'Growth'].forEach(f => {
+      ['Top', 'Mid', 'Bot', 'Growth', 'RnF'].forEach(f => {
         const subRow = [r.region, f];
         data.monthLabels.forEach((m) => {
           subRow.push((r.funnels[f][m]?.spend || 0).toString());
@@ -128,7 +128,7 @@ export default function MatFunnelPage() {
     data.monthLabels.forEach(m => {
       let monthTotal = 0;
       data.regions.forEach(r => {
-        monthTotal += ['Top', 'Mid', 'Bot', 'Growth'].reduce((sum, f) => sum + (r.funnels[f][m]?.spend || 0), 0);
+        monthTotal += ['Top', 'Mid', 'Bot', 'Growth', 'RnF'].reduce((sum, f) => sum + (r.funnels[f][m]?.spend || 0), 0);
       });
       grandTotalRow.push(monthTotal.toString());
     });
@@ -146,7 +146,7 @@ export default function MatFunnelPage() {
   };
 
   const getRegionTotal = (regionNode: any, monthLabel: string) => {
-    return ['Top', 'Mid', 'Bot', 'Growth'].reduce((sum, f) => sum + (regionNode.funnels[f][monthLabel]?.spend || 0), 0);
+    return ['Top', 'Mid', 'Bot', 'Growth', 'RnF'].reduce((sum, f) => sum + (regionNode.funnels[f][monthLabel]?.spend || 0), 0);
   };
 
   const formatNumber = (num: number) => {
@@ -253,7 +253,7 @@ export default function MatFunnelPage() {
                     ))}
                   </tr>
                   
-                  {expandedRegions[r.region] && ['Top', 'Mid', 'Bot', 'Growth'].map(f => (
+                  {expandedRegions[r.region] && ['Top', 'Mid', 'Bot', 'Growth', 'RnF'].map(f => (
                     <tr key={f} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--table-row-even)' }}>
                       <td style={{ textAlign: 'left', padding: '10px 16px 10px 40px', color: 'var(--text-secondary)' }}>
                         {f}
