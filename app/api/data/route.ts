@@ -24,6 +24,7 @@ function getCategories(campaignName: string, adsetName: string): Set<string> {
   
   if (cn.includes('group') || an.includes('group')) matched.add('Group');
   if (cn.includes('boost') || an.includes('boost')) matched.add('Boost');
+  if (cn.includes('rnf') || an.includes('rnf') || cn.includes('r&f') || an.includes('r&f')) matched.add('RnF');
   
   let productCategory = null;
   const isGrowth = classifyFunnel(campaignName, adsetName) === 'Growth';
