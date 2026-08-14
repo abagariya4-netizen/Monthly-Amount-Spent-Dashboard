@@ -58,7 +58,11 @@ function getCategories(campaignName: string, adsetName: string): Set<string> {
     else if (str.includes('foot')) productCategory = 'Foot Massager';
     else if (str.includes('bed')) productCategory = 'Bed';
     else if (str.includes('acce')) productCategory = 'Accessories';
-    else productCategory = 'Mat';
+    else {
+      if (!matched.has('Group') && !matched.has('Boost') && !matched.has('RnF')) {
+        productCategory = 'Mat';
+      }
+    }
   } else {
     const str = cn + " " + an;
     const isMat = (cn.includes('mat') || cn.includes('mattress')) && !cn.includes('non_mat') && !cn.includes('non_mattress');
@@ -72,7 +76,11 @@ function getCategories(campaignName: string, adsetName: string): Set<string> {
       else if (str.includes('elite')) productCategory = 'Elite';
       else if (str.includes('foot')) productCategory = 'Foot Massager';
       else if (str.includes('all_products') || isMat) productCategory = 'Mat';
-      else productCategory = 'Mat';
+      else {
+        if (!matched.has('Group') && !matched.has('Boost') && !matched.has('RnF')) {
+          productCategory = 'Mat';
+        }
+      }
     }
   }
   
