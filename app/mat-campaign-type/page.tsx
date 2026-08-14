@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import Papa from 'papaparse';
 
 import { getMappedCity } from '@/lib/googleCityMapping';
+import { TSC_CITIES } from '@/lib/googleCityMap';
 
 const CATEGORIES = ['Mattress', 'Chair', 'Desk', 'Elite', 'Sofa', 'Foot Massager', 'Accessories', 'Bed'];
 const CAT_MAP: Record<string, string> = {
@@ -37,16 +38,6 @@ function classifyCampaignType(rawType: string, campaignName: string): string {
   return rawType;
 }
 
-const CITIES = ['Ahmedabad', 'Ballari', 'Belgaum', 'Bengaluru', 'Bhopal', 'Bhubaneswar', 
-   'Chandigarh', 'Chennai', 'Coimbatore', 'Dehradun', 'Delhi', 'Faridabad', 
-   'Ghaziabad', 'Goa', 'Guntur', 'Gurgaon', 'Guwahati', 'Hosur', 'Hubbali', 'Hyderabad', 
-   'Indore', 'Jaipur', 'Kakinada', 'Kanpur', 'KarimNagar', 'Kochi', 'Kolhapur', 
-   'Kolkata', 'Kota', 'Kozhikode', 'Lucknow', 'Ludhiana', 'Madurai', 'Mangaluru', 
-   'Mohali', 'Mumbai', 'Mysore', 'Nagpur', 'Nanded', 'Nashik', 'Noida', 'Patna', 
-   'Puducherry', 'Pune', 'Raipur', 'Rajahmundry', 'Rajkot', 'Salem', 'Sambhaji Nagar', 
-   'Sangli', 'Surat', 'Thiruvananthapuram', 'Thrissur', 'Tiruchirappalli', 
-   'Tirupati', 'Tiruppur', 'Udaipur', 'Vadodara', 'Vijayawada', 'Visakhapatnam', 
-   'Warangal', 'Rest'];
 
 function parseMonthStr(raw: string): string {
   const r = raw.trim();
@@ -189,7 +180,7 @@ export default function MatCampaignTypePage() {
   };
 
   const isAllCats = CATEGORIES.every(c => selectedCats.includes(c));
-  const isAllCities = CITIES.every(c => selectedCities.includes(c));
+  const isAllCities = TSC_CITIES.every(c => selectedCities.includes(c));
 
   const toggleAllCats = () => {
     if (isAllCats) setSelectedCats([]);
@@ -203,7 +194,7 @@ export default function MatCampaignTypePage() {
 
   const toggleAllCities = () => {
     if (isAllCities) setSelectedCities([]);
-    else setSelectedCities([...CITIES]);
+    else setSelectedCities([...TSC_CITIES]);
   };
 
   const toggleCity = (city: string) => {
@@ -265,7 +256,7 @@ export default function MatCampaignTypePage() {
       const map = new Map<string, Map<string, Record<string, { cost: number, conv: number }>>>();
       filteredData.forEach(r => {
         // Find proper case for city based on raw matched mappedCity
-        const properCityName = CITIES.find(c => c.toLowerCase() === r.mappedCity) || r.mappedCity;
+        const properCityName = TSC_CITIES.find(c => c.toLowerCase() === r.mappedCity) || r.mappedCity;
         
         let cityNode = map.get(properCityName);
         if (!cityNode) {
@@ -465,7 +456,7 @@ export default function MatCampaignTypePage() {
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
               <input type="checkbox" checked={isAllCities} onChange={toggleAllCities} /> All
             </label>
-            {CITIES.map(city => (
+            {TSC_CITIES.map(city => (
               <label key={city} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}>
                 <input type="checkbox" checked={selectedCities.includes(city)} onChange={() => toggleCity(city)} />
                 {city}

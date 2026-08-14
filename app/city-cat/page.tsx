@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import Papa from 'papaparse';
 
 import { getMappedCity } from '@/lib/googleCityMapping';
+import { TSC_CITIES } from '@/lib/googleCityMap';
 
 const CATEGORIES = ['Mattress', 'Chair', 'Desk', 'Elite', 'Sofa', 'Foot Massager', 'Accessories', 'Bed'];
 const CAT_MAP: Record<string, string> = {
@@ -23,18 +24,7 @@ function getCategoryFromCampaign(campaignName: string): string {
   return 'Mattress';
 }
 
-const CITY_ORDER = [
-  'Bengaluru', 'Rest', 'Hyderabad', 'Mumbai', 'Chennai', 'Pune', 'Delhi', 'Gurgaon', 
-  'Noida', 'Kolkata', 'Ahmedabad', 'Ghaziabad', 'Kochi', 'Jaipur', 'Mohali', 
-  'Coimbatore', 'Faridabad', 'Visakhapatnam', 'Lucknow', 'Indore', 
-  'Thiruvananthapuram', 'Patna', 'Vadodara', 'Nagpur', 'Bhubaneswar', 'Surat', 
-  'Mysore', 'Ludhiana', 'Guwahati', 'Mangaluru', 'Thrissur', 'Vijayawada', 
-  'Dehradun', 'Rajkot', 'Nashik', 'Guntur', 'Madurai', 'Kozhikode', 'Warangal', 'Goa', 
-  'Salem', 'Hubballi', 'Kanpur', 'Sambhaji Nagar', 'Tiruchirappalli', 'Belgaum', 
-  'Kakinada', 'Bhopal', 'Kolhapur', 'Kota', 'Tiruppur', 'Tirupati', 'Rajahmundry', 
-  'Udaipur', 'Sangli', 'KarimNagar', 'Ballari', 'Hosur', 'Chandigarh', 'Raipur', 
-  'Nanded', 'Puducherry'
-];
+
 
 type RawRow = {
   cat: string;
@@ -116,9 +106,9 @@ export default function CityCatPage() {
         
         const unmatched = new Set<string>();
 
-        // Build lowercased lookup map for the 64 static cities
+        // Build lowercased lookup map for the static cities
         const staticCityMap = new Map<string, string>();
-        CITY_ORDER.forEach(c => staticCityMap.set(c.toLowerCase(), c));
+        TSC_CITIES.forEach(c => staticCityMap.set(c.toLowerCase(), c));
 
         results.data.forEach((r: any) => {
           const cleanRow: any = {};
@@ -216,16 +206,22 @@ export default function CityCatPage() {
   const groupedByCity = useMemo(() => {
     const map = new Map<string, Record<string, { cost: number }>>();
     
-    // Initialize all 64 cities to 0
-    CITY_ORDER.forEach(city => {
+    // Initialize all cities to 0
+    TSC_CITIES.forEach(city => {
       const node: Record<string, { cost: number }> = {};
       monthCols.forEach(m => node[m] = { cost: 0 });
       map.set(city, node);
     });
 
     filteredData.forEach(r => {
-      // By this point, r.mappedCity is guaranteed to be one of the 64 cities
-      let node = map.get(r.mappedCity)!;
+      // By this point, r.mappedCity is guaranteed to be one of the cities
+      let node = map.get(r.mappedCity);
+      if (!node) {
+        // Fallback in case of weird data
+        node = {};
+        monthCols.forEach(m => node![m] = { cost: 0 });
+        map.set(r.mappedCity, node);
+      }
       if (node[r.month]) {
         node[r.month].cost += r.cost;
       }
@@ -249,8 +245,9 @@ export default function CityCatPage() {
     rows.push(['City', ...displayCols].join(','));
     let grandTotalCost = Object.fromEntries(monthCols.map(m => [m, 0]));
     
-    CITY_ORDER.forEach(city => {
-      const node = groupedByCity.get(city)!;
+    TSC_CITIES.forEach(city => {
+      const node = groupedByCity.get(city);
+      if (!node) return;
       const row = [city];
       monthCols.forEach(m => {
         row.push(node[m].cost.toString());
@@ -334,18 +331,25 @@ export default function CityCatPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {CITY_ORDER.map(city => (
-                    <tr key={city} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ textAlign: 'left', padding: '12px 16px' }}>{city}</td>
-                      {monthCols.map(m => (
-                        <td key={m} style={{ textAlign: 'right', padding: '12px 16px' }}>{formatNum(groupedByCity.get(city)![m].cost)}</td>
-                      ))}
-                    </tr>
-                  ))}
+                  {TSC_CITIES.map(city => {
+                    const node = groupedByCity.get(city);
+                    if (!node) return null;
+                    return (
+                      <tr key={city} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ textAlign: 'left', padding: '12px 16px' }}>{city}</td>
+                        {monthCols.map(m => (
+                          <td key={m} style={{ textAlign: 'right', padding: '12px 16px' }}>{formatNum(node[m].cost)}</td>
+                        ))}
+                      </tr>
+                    );
+                  })}
                   <tr className="total-row" style={{ backgroundColor: '#111', borderTop: '2px solid var(--border-color)' }}>
                     <td style={{ fontWeight: 'bold', textAlign: 'left', padding: '12px 16px' }}>Total</td>
                     {monthCols.map(m => {
-                      const total = CITY_ORDER.reduce((sum, c) => sum + groupedByCity.get(c)![m].cost, 0);
+                      const total = TSC_CITIES.reduce((sum, c) => {
+                        const node = groupedByCity.get(c);
+                        return sum + (node ? node[m].cost : 0);
+                      }, 0);
                       return <td key={m} style={{ textAlign: 'right', fontWeight: 'bold', padding: '12px 16px' }}>{formatNum(total)}</td>;
                     })}
                   </tr>
